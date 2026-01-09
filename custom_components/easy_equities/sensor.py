@@ -29,6 +29,7 @@ from .const import (
     DOMAIN,
 )
 from .coordinator import EasyEquitiesDataUpdateCoordinator
+from .util import parse_currency
 
 
 async def async_setup_entry(
@@ -37,6 +38,10 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up Easy Equities sensor platform."""
+    import logging
+    _LOGGER = logging.getLogger(__name__)
+    
+    _LOGGER.info("Setting up Easy Equities sensors for entry: %s", entry.entry_id)
     coordinator: EasyEquitiesDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
 
     entities: list[SensorEntity] = [
@@ -46,15 +51,23 @@ async def async_setup_entry(
         EasyEquitiesPortfolioProfitLossPercentSensor(coordinator, entry, "portfolio_profit_loss_percent"),
         EasyEquitiesHoldingsCountSensor(coordinator, entry, "portfolio_holdings_count"),
     ]
+    _LOGGER.debug("Created %d portfolio sensor(s)", len(entities))
 
     # Add individual holding sensors
     if coordinator.data and "holdings" in coordinator.data:
-        for holding in coordinator.data["holdings"]:
+        holdings = coordinator.data["holdings"]
+        _LOGGER.debug("Found %d holding(s) to create sensors for", len(holdings))
+        for holding in holdings:
             entities.append(
                 EasyEquitiesHoldingSensor(coordinator, entry, holding)
             )
+        _LOGGER.info("Created %d holding sensor(s)", len(holdings))
+    else:
+        _LOGGER.warning("No holdings data available yet, holding sensors will be created on next update")
 
+    _LOGGER.info("Adding %d total sensor(s) to Home Assistant", len(entities))
     async_add_entities(entities, update_before_add=True)
+    _LOGGER.info("Sensor setup completed for entry: %s", entry.entry_id)
 
 
 class EasyEquitiesSensor(CoordinatorEntity[EasyEquitiesDataUpdateCoordinator], SensorEntity):
@@ -266,8 +279,16 @@ class EasyEquitiesHoldingSensor(EasyEquitiesSensor):
             return None
         value_str = holding.get("current_value", "0")
         try:
-            return float(value_str.replace("R", "").replace(",", "").replace(" ", ""))
-        except (ValueError, AttributeError):
+            return parse_currency(value_str)
+        except (ValueError, AttributeError) as err:
+            import logging
+            _LOGGER = logging.getLogger(__name__)
+            _LOGGER.warning(
+                "Failed to parse current_value for holding %s: %s (value: %s)",
+                self._contract_code,
+                err,
+                value_str
+            )
             return None
 
     @property
