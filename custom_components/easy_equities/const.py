@@ -11,6 +11,7 @@ DEFAULT_TIMEOUT: Final = 30
 CONF_USERNAME: Final = "username"
 CONF_PASSWORD: Final = "password"
 CONF_ACCOUNT_ID: Final = "account_id"
+CONF_ACCOUNT_IDS: Final = "account_ids"  # Multiple accounts
 CONF_SCAN_INTERVAL: Final = "scan_interval"
 
 ATTR_ACCOUNT_NAME: Final = "account_name"

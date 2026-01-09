@@ -12,8 +12,9 @@ from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.exceptions import HomeAssistantError
+import homeassistant.helpers.config_validation as cv
 
-from .const import CONF_ACCOUNT_ID, CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL, DOMAIN
+from .const import CONF_ACCOUNT_ID, CONF_ACCOUNT_IDS, CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL, DOMAIN
 from .options import async_get_options_flow
 
 _LOGGER = logging.getLogger(__name__)
@@ -105,12 +106,31 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     ) -> FlowResult:
         """Handle account selection."""
         if user_input is not None:
-            account_id = user_input.get(CONF_ACCOUNT_ID)
-            if account_id:
-                self.data[CONF_ACCOUNT_ID] = account_id
+            account_ids = user_input.get(CONF_ACCOUNT_IDS, [])
+            if not account_ids:
+                # Fallback to single account selection for backward compatibility
+                account_id = user_input.get(CONF_ACCOUNT_ID)
+                if account_id:
+                    account_ids = [account_id]
+            
+            if account_ids:
+                # Store as list for multiple accounts
+                self.data[CONF_ACCOUNT_IDS] = account_ids
+                # Also store first account for backward compatibility
+                self.data[CONF_ACCOUNT_ID] = account_ids[0] if len(account_ids) == 1 else None
+
+            # Create title with account count
+            if len(account_ids) == 1:
+                account_name = next(
+                    (acc["name"] for acc in self.accounts if acc["id"] == account_ids[0]),
+                    "Account"
+                )
+                title = f"{self.data[CONF_USERNAME]} - {account_name}"
+            else:
+                title = f"{self.data[CONF_USERNAME]} ({len(account_ids)} accounts)"
 
             return self.async_create_entry(
-                title=self.data[CONF_USERNAME],
+                title=title,
                 data=self.data,
                 options={CONF_SCAN_INTERVAL: DEFAULT_SCAN_INTERVAL},
             )
@@ -118,20 +138,32 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         account_options = {acc["id"]: acc["name"] for acc in self.accounts}
         if len(account_options) == 1:
             # Auto-select if only one account
-            self.data[CONF_ACCOUNT_ID] = list(account_options.keys())[0]
+            account_id = list(account_options.keys())[0]
+            self.data[CONF_ACCOUNT_IDS] = [account_id]
+            self.data[CONF_ACCOUNT_ID] = account_id
             return self.async_create_entry(
-                title=self.data[CONF_USERNAME],
+                title=f"{self.data[CONF_USERNAME]} - {list(account_options.values())[0]}",
                 data=self.data,
                 options={CONF_SCAN_INTERVAL: DEFAULT_SCAN_INTERVAL},
             )
 
+        # Multi-select for multiple accounts
         return self.async_show_form(
             step_id="account",
             data_schema=vol.Schema(
                 {
-                    vol.Required(CONF_ACCOUNT_ID): vol.In(account_options),
+                    vol.Required(
+                        CONF_ACCOUNT_IDS,
+                        default=list(account_options.keys())
+                    ): vol.All(
+                        cv.multi_select(account_options),
+                        vol.Length(min=1, msg="Select at least one account"),
+                    ),
                 }
             ),
+            description_placeholders={
+                "accounts": ", ".join(account_options.values())
+            },
         )
 
 

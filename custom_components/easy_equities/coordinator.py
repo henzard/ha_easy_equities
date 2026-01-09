@@ -16,6 +16,7 @@ from .const import (
     ATTR_ACCOUNT_NUMBER,
     ATTR_CURRENCY,
     CONF_ACCOUNT_ID,
+    CONF_ACCOUNT_IDS,
     CONF_PASSWORD,
     CONF_SCAN_INTERVAL,
     CONF_USERNAME,
@@ -33,7 +34,15 @@ class EasyEquitiesDataUpdateCoordinator(DataUpdateCoordinator):
         """Initialize the coordinator."""
         self.entry = entry
         self.client: EasyEquitiesClient | SatrixClient | None = None
-        self.account_id = entry.data.get(CONF_ACCOUNT_ID)
+        # Support both single account (backward compat) and multiple accounts
+        account_ids = entry.data.get(CONF_ACCOUNT_IDS)
+        if not account_ids:
+            # Backward compatibility: single account
+            account_id = entry.data.get(CONF_ACCOUNT_ID)
+            self.account_ids = [account_id] if account_id else []
+        else:
+            self.account_ids = account_ids
+        self.account_id = entry.data.get(CONF_ACCOUNT_ID)  # Keep for backward compat
         self.username = entry.data[CONF_USERNAME]
         self.password = entry.data[CONF_PASSWORD]
         self.is_satrix = entry.data.get("is_satrix", False)
@@ -79,39 +88,94 @@ class EasyEquitiesDataUpdateCoordinator(DataUpdateCoordinator):
             if not accounts:
                 raise UpdateFailed("No accounts found")
 
-            # Use specified account or first account
-            account = None
-            if self.account_id:
+            # Determine which accounts to fetch
+            accounts_to_fetch = []
+            if self.account_ids:
+                # Multiple accounts selected
+                for account_id in self.account_ids:
+                    account = next(
+                        (acc for acc in accounts if acc.id == account_id), None
+                    )
+                    if account:
+                        accounts_to_fetch.append(account)
+            elif self.account_id:
+                # Single account (backward compatibility)
                 account = next(
                     (acc for acc in accounts if acc.id == self.account_id), None
                 )
-            if not account:
-                account = accounts[0]
+                if account:
+                    accounts_to_fetch.append(account)
+            else:
+                # No account specified, use first account
+                accounts_to_fetch = [accounts[0]]
 
-            # Fetch holdings
-            holdings = await self.hass.async_add_executor_job(
-                self.client.accounts.holdings, account.id, True
-            )
+            if not accounts_to_fetch:
+                raise UpdateFailed("No valid accounts found")
 
-            # Fetch valuations
-            valuations = await self.hass.async_add_executor_job(
-                self.client.accounts.valuations, account.id
-            )
+            # Fetch data for all selected accounts
+            all_accounts_data = []
+            all_holdings = []
+            total_purchase_value = 0.0
+            total_current_value = 0.0
 
-            # Fetch transactions (last 30 days)
-            transactions = await self.hass.async_add_executor_job(
-                self.client.accounts.transactions, account.id
-            )
+            for account in accounts_to_fetch:
+                # Fetch holdings
+                holdings = await self.hass.async_add_executor_job(
+                    self.client.accounts.holdings, account.id, True
+                )
 
-            # Calculate totals
-            total_purchase_value = sum(
-                float(holding.get("purchase_value", "0").replace("R", "").replace(",", "").replace(" ", ""))
-                for holding in holdings
-            )
-            total_current_value = sum(
-                float(holding.get("current_value", "0").replace("R", "").replace(",", "").replace(" ", ""))
-                for holding in holdings
-            )
+                # Fetch valuations
+                valuations = await self.hass.async_add_executor_job(
+                    self.client.accounts.valuations, account.id
+                )
+
+                # Fetch transactions (last 30 days)
+                transactions = await self.hass.async_add_executor_job(
+                    self.client.accounts.transactions, account.id
+                )
+
+                # Calculate account totals
+                account_purchase_value = sum(
+                    float(holding.get("purchase_value", "0").replace("R", "").replace(",", "").replace(" ", ""))
+                    for holding in holdings
+                )
+                account_current_value = sum(
+                    float(holding.get("current_value", "0").replace("R", "").replace(",", "").replace(" ", ""))
+                    for holding in holdings
+                )
+
+                # Add account identifier to holdings
+                for holding in holdings:
+                    holding["_account_id"] = account.id
+                    holding["_account_name"] = account.name
+
+                all_holdings.extend(holdings)
+                total_purchase_value += account_purchase_value
+                total_current_value += account_current_value
+
+                all_accounts_data.append({
+                    "account": {
+                        "id": account.id,
+                        "name": account.name,
+                        "trading_currency_id": account.trading_currency_id,
+                    },
+                    "holdings": holdings,
+                    "valuations": valuations,
+                    "transactions": transactions[:50],  # Limit to last 50 transactions
+                    "summary": {
+                        "total_purchase_value": account_purchase_value,
+                        "total_current_value": account_current_value,
+                        "total_profit_loss": account_current_value - account_purchase_value,
+                        "total_profit_loss_percent": (
+                            ((account_current_value - account_purchase_value) / account_purchase_value * 100)
+                            if account_purchase_value > 0
+                            else 0
+                        ),
+                        "holdings_count": len(holdings),
+                    },
+                })
+
+            # Calculate overall totals
             total_profit_loss = total_current_value - total_purchase_value
             total_profit_loss_percent = (
                 (total_profit_loss / total_purchase_value * 100)
@@ -119,21 +183,24 @@ class EasyEquitiesDataUpdateCoordinator(DataUpdateCoordinator):
                 else 0
             )
 
+            # Use first account for backward compatibility
+            primary_account = all_accounts_data[0]["account"] if all_accounts_data else None
+
             return {
-                "account": {
-                    "id": account.id,
-                    "name": account.name,
-                    "trading_currency_id": account.trading_currency_id,
-                },
-                "holdings": holdings,
-                "valuations": valuations,
-                "transactions": transactions[:50],  # Limit to last 50 transactions
+                "account": primary_account,  # Primary account for backward compatibility
+                "accounts": all_accounts_data,  # All accounts data
+                "holdings": all_holdings,  # All holdings from all accounts
+                "valuations": all_accounts_data[0]["valuations"] if all_accounts_data else {},  # Primary account valuations
+                "transactions": [
+                    tx for account_data in all_accounts_data
+                    for tx in account_data["transactions"]
+                ][:50],  # Combined transactions, limit to 50
                 "summary": {
                     "total_purchase_value": total_purchase_value,
                     "total_current_value": total_current_value,
                     "total_profit_loss": total_profit_loss,
                     "total_profit_loss_percent": total_profit_loss_percent,
-                    "holdings_count": len(holdings),
+                    "holdings_count": len(all_holdings),
                 },
             }
 
