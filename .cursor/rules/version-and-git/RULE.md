@@ -5,6 +5,24 @@ alwaysApply: true
 
 # Version and Git Workflow Rules
 
+## ⚠️ AUTOMATION REQUIREMENT - READ THIS FIRST
+
+**ALL version bumping, committing, pushing, and tagging MUST be done AUTOMATICALLY.**
+
+When you make code changes, you MUST automatically:
+1. Check what changed (`git status`)
+2. Determine if version bump is needed (code changes = YES)
+3. Read current version from `manifest.json`
+4. Calculate new version based on commit type:
+   - `feat:` → MINOR bump (1.0.0 → 1.1.0)
+   - `fix:` → PATCH bump (1.0.0 → 1.0.1)
+   - Breaking changes → MAJOR bump (1.0.0 → 2.0.0)
+5. Update version in `manifest.json`
+6. Stage, commit, push, tag, and push tag - ALL AUTOMATICALLY
+
+**DO NOT ask the user if they want to bump the version - DO IT AUTOMATICALLY.**
+**DO NOT leave steps incomplete - COMPLETE THE ENTIRE WORKFLOW AUTOMATICALLY.**
+
 ## Version Bumping - CRITICAL FOR HACS
 - **Only bump version for code changes**
 - NOT for documentation, rules, or non-code files
@@ -42,24 +60,54 @@ Without git tags:
 
 **Never skip tagging - it breaks HACS version display!**
 
-## Git Workflow
+## Git Workflow - AUTOMATED
 - **ALWAYS commit changes immediately** - Never leave uncommitted changes
+- **AUTOMATICALLY check git status** before committing to see what changed
+- **AUTOMATICALLY determine if version bump is needed** based on file types changed
+- **AUTOMATICALLY bump version** if code changed (read current version, determine bump type, update manifest.json)
 - **Commit after each logical change** - don't batch unrelated changes
 - **Commit message format**: `feat: description` or `fix: description` or `docs: description`
 - **ALWAYS push immediately after committing** - use `git push` right after `git commit`
+- **AUTOMATICALLY create and push tag** after pushing code changes (if version was bumped)
 - **Never leave files uncommitted** - If you create or modify files, commit them in the same session
-- **Check git status** before committing to ensure only intended files are staged
+- **Never skip the automated workflow** - All steps must be completed automatically
+
+## AUTOMATED VERSION WORKFLOW - MANDATORY
+
+**THIS PROCESS MUST BE AUTOMATED - DO NOT SKIP STEPS**
+
+After making ANY code changes, you MUST automatically:
+
+1. **Check what changed**: Run `git status` to see modified files
+2. **Determine if version bump needed**: 
+   - Code changes in `custom_components/easy_equities/*.py` → YES, bump version
+   - Changes to `manifest.json` (requirements) → YES, bump version
+   - Changes to `hacs.json` → YES, bump version
+   - Documentation/rules/lovelace only → NO version bump
+3. **Read current version**: Read `custom_components/easy_equities/manifest.json` to get current version
+4. **Determine bump type**:
+   - `feat:` commits → MINOR bump (1.0.0 → 1.1.0)
+   - `fix:` commits → PATCH bump (1.0.0 → 1.0.1)
+   - Breaking changes → MAJOR bump (1.0.0 → 2.0.0)
+5. **Update version in manifest.json**: Automatically bump the version
+6. **Stage all changes**: `git add .` (or specific files)
+7. **Commit immediately**: `git commit -m "type: description"`
+8. **Push immediately**: `git push`
+9. **Create git tag**: `git tag v{VERSION} -m "Version {VERSION}: description"`
+10. **Push tag**: `git push origin v{VERSION}` (REQUIRED for HACS)
+
+**This entire workflow must be completed automatically in one session. Never leave steps incomplete.**
 
 ## Critical Rule: No Uncommitted Changes + Mandatory Tagging
 
 **After making ANY changes:**
 1. ✅ Check what changed: `git status`
-2. ✅ Update version in `manifest.json` (if code changed)
-3. ✅ Stage changes: `git add .` (or specific files)
-4. ✅ Commit immediately: `git commit -m "type: description"`
-5. ✅ Push immediately: `git push`
-6. ✅ **Create git tag**: `git tag v{VERSION} -m "Version {VERSION}: description"`
-7. ✅ **Push tag**: `git push origin v{VERSION}` (REQUIRED for HACS)
+2. ✅ Update version in `manifest.json` (if code changed) - **AUTOMATIC**
+3. ✅ Stage changes: `git add .` (or specific files) - **AUTOMATIC**
+4. ✅ Commit immediately: `git commit -m "type: description"` - **AUTOMATIC**
+5. ✅ Push immediately: `git push` - **AUTOMATIC**
+6. ✅ **Create git tag**: `git tag v{VERSION} -m "Version {VERSION}: description"` - **AUTOMATIC**
+7. ✅ **Push tag**: `git push origin v{VERSION}` (REQUIRED for HACS) - **AUTOMATIC**
 
 **Never:**
 - ❌ Leave files uncommitted
@@ -121,28 +169,67 @@ After pushing code:
 - `git diff` - See differences
 - `git log` - See commit history
 
+## Automated Workflow Implementation
+
+**When you make code changes, you MUST execute this workflow automatically:**
+
+```python
+# Pseudo-code for what you must do automatically:
+
+1. Check git status to see what changed
+2. If code files changed (custom_components/easy_equities/*.py):
+   a. Read current version from manifest.json
+   b. Determine bump type from commit message:
+      - "feat:" → MINOR (1.0.0 → 1.1.0)
+      - "fix:" → PATCH (1.0.0 → 1.0.1)
+      - Breaking changes → MAJOR (1.0.0 → 2.0.0)
+   c. Update version in manifest.json
+   d. Stage changes: git add .
+   e. Commit: git commit -m "type: description"
+   f. Push: git push
+   g. Tag: git tag v{VERSION} -m "Version {VERSION}: description"
+   h. Push tag: git push origin v{VERSION}
+3. If only docs/rules/lovelace changed:
+   a. Stage changes: git add .
+   b. Commit: git commit -m "docs: description"
+   c. Push: git push
+   d. NO version bump, NO tag
+```
+
 ## Example Workflow (COMPLETE - Never Skip Steps)
+
+**This workflow must be executed automatically after code changes:**
 
 ```bash
 # 1. Make changes to code
-# 2. Update version in manifest.json (e.g., 1.0.1)
-# 3. Stage changes
+# 2. AUTOMATICALLY: Check what changed
+git status
+
+# 3. AUTOMATICALLY: Read current version and determine new version
+# Current: 1.0.0, Change: feat → New: 1.1.0
+
+# 4. AUTOMATICALLY: Update version in manifest.json
+# (Update "version": "1.1.0")
+
+# 5. AUTOMATICALLY: Stage changes
 git add .
 
-# 4. Commit with clear message
+# 6. AUTOMATICALLY: Commit with clear message
 git commit -m "feat: add comprehensive logging to coordinators"
 
-# 5. Push immediately
+# 7. AUTOMATICALLY: Push immediately
 git push
 
-# 6. MANDATORY: Create git tag
-git tag v1.0.1 -m "Version 1.0.1: add comprehensive logging to coordinators"
+# 8. AUTOMATICALLY: Create git tag
+git tag v1.1.0 -m "Version 1.1.0: add comprehensive logging to coordinators"
 
-# 7. MANDATORY: Push tag
-git push origin v1.0.1
+# 9. AUTOMATICALLY: Push tag
+git push origin v1.1.0
 
-# 8. GitHub Release is AUTOMATED by .github/workflows/release.yml
+# 10. GitHub Release is AUTOMATED by .github/workflows/release.yml
 ```
+
+**All steps 2-9 must be executed automatically without user prompting.**
 
 **Note:** GitHub Releases are automatically created by GitHub Actions when tags are pushed. The workflow (`.github/workflows/release.yml`) handles this automatically.
 
