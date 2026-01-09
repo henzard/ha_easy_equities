@@ -1,0 +1,15 @@
+# Holdings List Card
+# Displays all individual holdings in your portfolio
+
+type: entities
+title: Portfolio Holdings
+show_header_toggle: false
+entities:
+  # Note: Replace 'holding_' with actual holding sensor entity IDs
+  # Example: sensor.holding_equ_za_sygjp
+  - entity: sensor.holding_equ_za_sygjp
+    name: "{{ state_attr('sensor.holding_equ_za_sygjp', 'name') | default('Holding') }}"
+    icon: mdi:chart-line
+    secondary_info: "{{ state_attr('sensor.holding_equ_za_sygjp', 'current_value') }}"
+    tap_action:
+      action: more-info

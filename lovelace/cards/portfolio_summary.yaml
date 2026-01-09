@@ -1,0 +1,25 @@
+# Portfolio Summary Card
+# Shows key portfolio metrics in a compact format
+
+type: vertical-stack
+cards:
+  - type: markdown
+    content: |
+      ## 💼 Portfolio Summary
+      Quick overview of your investment performance
+  - type: entities
+    title: Portfolio Metrics
+    show_header_toggle: false
+    entities:
+      - entity: sensor.portfolio_value
+        name: Current Value
+        icon: mdi:currency-usd
+      - entity: sensor.portfolio_purchase_value
+        name: Total Invested
+        icon: mdi:wallet
+      - entity: sensor.portfolio_profit_loss
+        name: Profit/Loss
+        icon: mdi:trending-up
+      - entity: sensor.portfolio_profit_loss_percent
+        name: Return %
+        icon: mdi:percent

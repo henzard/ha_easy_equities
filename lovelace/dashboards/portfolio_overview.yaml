@@ -1,0 +1,83 @@
+title: Easy Equities Portfolio
+path: easy-equities-portfolio
+icon: mdi:wallet
+panel: true
+cards:
+  # Header Section
+  - type: markdown
+    content: |
+      ## 💼 Easy Equities Portfolio
+      Monitor your investment performance in real-time
+
+  # Portfolio Summary Cards
+  - type: horizontal-stack
+    cards:
+      - type: gauge
+        entity: sensor.portfolio_profit_loss_percent
+        name: Return %
+        min: -50
+        max: 100
+        severity:
+          green: 0
+          yellow: -10
+          red: -20
+      - type: gauge
+        entity: sensor.portfolio_value
+        name: Portfolio Value
+        min: 0
+        max: 1000000
+        unit: ZAR
+
+  # Key Metrics
+  - type: entities
+    title: Portfolio Metrics
+    entities:
+      - entity: sensor.portfolio_value
+        name: Total Portfolio Value
+        icon: mdi:wallet
+        tap_action:
+          action: more-info
+      - entity: sensor.portfolio_purchase_value
+        name: Total Invested
+        icon: mdi:currency-usd
+        tap_action:
+          action: more-info
+      - entity: sensor.portfolio_profit_loss
+        name: Profit/Loss
+        icon: mdi:trending-up
+        tap_action:
+          action: more-info
+      - entity: sensor.portfolio_profit_loss_percent
+        name: Profit/Loss Percentage
+        icon: mdi:percent
+        tap_action:
+          action: more-info
+      - entity: sensor.portfolio_holdings_count
+        name: Number of Holdings
+        icon: mdi:chart-box
+        tap_action:
+          action: more-info
+
+  # Holdings List
+  - type: markdown
+    content: |
+      ### 📈 Individual Holdings
+      Your current investment positions
+
+  - type: entities
+    title: Holdings
+    show_header_toggle: false
+    # Note: These are example entity IDs - replace with your actual holding sensors
+    # The integration creates sensors like: sensor.holding_EQU_ZA_SYGJP
+    entities:
+      - type: custom:auto-entities
+        card:
+          type: entities
+          title: Holdings
+        filter:
+          include:
+            - entity_id: sensor.holding_*
+              options:
+                secondary_info: last-changed
+                tap_action:
+                  action: more-info

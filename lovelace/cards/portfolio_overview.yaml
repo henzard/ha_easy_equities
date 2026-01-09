@@ -1,0 +1,28 @@
+# Portfolio Overview Card
+# Use this card in your dashboard to show at-a-glance portfolio status
+# Uses standard Home Assistant cards (no HACS dependencies)
+
+type: entities
+title: Easy Equities Portfolio
+entities:
+  - entity: sensor.portfolio_value
+    name: Total Portfolio Value
+    icon: mdi:wallet
+    tap_action:
+      action: more-info
+  - entity: sensor.portfolio_profit_loss
+    name: Profit/Loss
+    icon: mdi:trending-up
+    tap_action:
+      action: more-info
+  - entity: sensor.portfolio_profit_loss_percent
+    name: Profit/Loss %
+    icon: mdi:percent
+    tap_action:
+      action: more-info
+  - entity: sensor.portfolio_holdings_count
+    name: Number of Holdings
+    icon: mdi:chart-box
+    tap_action:
+      action: navigate
+      navigation_path: /easy-equities-portfolio
