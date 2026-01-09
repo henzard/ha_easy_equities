@@ -1,0 +1,41 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Easy Equities Setup",
+        "description": "Enter your Easy Equities or Satrix credentials",
+        "data": {
+          "username": "Username",
+          "password": "Password",
+          "is_satrix": "Use Satrix (instead of Easy Equities)"
+        }
+      },
+      "account": {
+        "title": "Select Account",
+        "description": "Select the account to monitor",
+        "data": {
+          "account_id": "Account"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Unable to connect to Easy Equities. Please check your credentials and try again.",
+      "invalid_auth": "Invalid authentication credentials. Please check your username and password.",
+      "unknown": "Unexpected error occurred. Please try again."
+    },
+    "abort": {
+      "already_configured": "This Easy Equities account is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Easy Equities Options",
+        "description": "Configure update interval",
+        "data": {
+          "scan_interval": "Update interval (seconds)"
+        }
+      }
+    }
+  }
+}

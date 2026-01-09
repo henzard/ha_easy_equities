@@ -49,18 +49,21 @@ class EasyEquitiesDataUpdateCoordinator(DataUpdateCoordinator):
             update_interval=scan_interval,
         )
 
+    async def async_update_interval(self) -> None:
+        """Update the scan interval from options."""
+        scan_interval = timedelta(
+            seconds=self.entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+        )
+        self.update_interval = scan_interval
+
     async def _async_update_data(self) -> dict[str, Any]:
         """Fetch data from Easy Equities."""
         try:
             if not self.client:
                 # Initialize client
                 if self.is_satrix:
-                    from easy_equities_client.clients import SatrixClient
-
                     self.client = SatrixClient()
                 else:
-                    from easy_equities_client.clients import EasyEquitiesClient
-
                     self.client = EasyEquitiesClient()
 
                 # Login

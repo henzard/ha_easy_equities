@@ -40,11 +40,11 @@ async def async_setup_entry(
     coordinator: EasyEquitiesDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
 
     entities: list[SensorEntity] = [
-        EasyEquitiesPortfolioValueSensor(coordinator, entry),
-        EasyEquitiesPortfolioPurchaseValueSensor(coordinator, entry),
-        EasyEquitiesPortfolioProfitLossSensor(coordinator, entry),
-        EasyEquitiesPortfolioProfitLossPercentSensor(coordinator, entry),
-        EasyEquitiesHoldingsCountSensor(coordinator, entry),
+        EasyEquitiesPortfolioValueSensor(coordinator, entry, "portfolio_value"),
+        EasyEquitiesPortfolioPurchaseValueSensor(coordinator, entry, "portfolio_purchase_value"),
+        EasyEquitiesPortfolioProfitLossSensor(coordinator, entry, "portfolio_profit_loss"),
+        EasyEquitiesPortfolioProfitLossPercentSensor(coordinator, entry, "portfolio_profit_loss_percent"),
+        EasyEquitiesHoldingsCountSensor(coordinator, entry, "portfolio_holdings_count"),
     ]
 
     # Add individual holding sensors
@@ -64,11 +64,13 @@ class EasyEquitiesSensor(CoordinatorEntity[EasyEquitiesDataUpdateCoordinator], S
         self,
         coordinator: EasyEquitiesDataUpdateCoordinator,
         entry: ConfigEntry,
+        key: str | None = None,
     ) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator)
         self._entry = entry
-        self._attr_unique_id = f"{entry.entry_id}_{self.entity_description.key}"
+        if key:
+            self._attr_unique_id = f"{entry.entry_id}_{key}"
         self._attr_device_info = {
             "identifiers": {(DOMAIN, entry.entry_id)},
             "name": f"Easy Equities ({coordinator.username})",
@@ -80,11 +82,19 @@ class EasyEquitiesSensor(CoordinatorEntity[EasyEquitiesDataUpdateCoordinator], S
 class EasyEquitiesPortfolioValueSensor(EasyEquitiesSensor):
     """Sensor for total portfolio value."""
 
-    _attr_name = "Portfolio Value"
-    _attr_native_unit_of_measurement = "ZAR"
-    _attr_device_class = SensorDeviceClass.MONETARY
-    _attr_state_class = SensorStateClass.MEASUREMENT
-    _attr_icon = "mdi:wallet"
+    def __init__(
+        self,
+        coordinator: EasyEquitiesDataUpdateCoordinator,
+        entry: ConfigEntry,
+        key: str,
+    ) -> None:
+        """Initialize the sensor."""
+        super().__init__(coordinator, entry, key)
+        self._attr_name = "Portfolio Value"
+        self._attr_native_unit_of_measurement = "ZAR"
+        self._attr_device_class = SensorDeviceClass.MONETARY
+        self._attr_state_class = SensorStateClass.MEASUREMENT
+        self._attr_icon = "mdi:wallet"
 
     @property
     def native_value(self) -> StateType:
@@ -109,11 +119,19 @@ class EasyEquitiesPortfolioValueSensor(EasyEquitiesSensor):
 class EasyEquitiesPortfolioPurchaseValueSensor(EasyEquitiesSensor):
     """Sensor for total purchase value."""
 
-    _attr_name = "Portfolio Purchase Value"
-    _attr_native_unit_of_measurement = "ZAR"
-    _attr_device_class = SensorDeviceClass.MONETARY
-    _attr_state_class = SensorStateClass.MEASUREMENT
-    _attr_icon = "mdi:currency-usd"
+    def __init__(
+        self,
+        coordinator: EasyEquitiesDataUpdateCoordinator,
+        entry: ConfigEntry,
+        key: str,
+    ) -> None:
+        """Initialize the sensor."""
+        super().__init__(coordinator, entry, key)
+        self._attr_name = "Portfolio Purchase Value"
+        self._attr_native_unit_of_measurement = "ZAR"
+        self._attr_device_class = SensorDeviceClass.MONETARY
+        self._attr_state_class = SensorStateClass.MEASUREMENT
+        self._attr_icon = "mdi:currency-usd"
 
     @property
     def native_value(self) -> StateType:
@@ -126,11 +144,19 @@ class EasyEquitiesPortfolioPurchaseValueSensor(EasyEquitiesSensor):
 class EasyEquitiesPortfolioProfitLossSensor(EasyEquitiesSensor):
     """Sensor for total profit/loss."""
 
-    _attr_name = "Portfolio Profit/Loss"
-    _attr_native_unit_of_measurement = "ZAR"
-    _attr_device_class = SensorDeviceClass.MONETARY
-    _attr_state_class = SensorStateClass.MEASUREMENT
-    _attr_icon = "mdi:trending-up"
+    def __init__(
+        self,
+        coordinator: EasyEquitiesDataUpdateCoordinator,
+        entry: ConfigEntry,
+        key: str,
+    ) -> None:
+        """Initialize the sensor."""
+        super().__init__(coordinator, entry, key)
+        self._attr_name = "Portfolio Profit/Loss"
+        self._attr_native_unit_of_measurement = "ZAR"
+        self._attr_device_class = SensorDeviceClass.MONETARY
+        self._attr_state_class = SensorStateClass.MEASUREMENT
+        self._attr_icon = "mdi:trending-up"
 
     @property
     def native_value(self) -> StateType:
@@ -154,10 +180,18 @@ class EasyEquitiesPortfolioProfitLossSensor(EasyEquitiesSensor):
 class EasyEquitiesPortfolioProfitLossPercentSensor(EasyEquitiesSensor):
     """Sensor for total profit/loss percentage."""
 
-    _attr_name = "Portfolio Profit/Loss %"
-    _attr_native_unit_of_measurement = "%"
-    _attr_state_class = SensorStateClass.MEASUREMENT
-    _attr_icon = "mdi:percent"
+    def __init__(
+        self,
+        coordinator: EasyEquitiesDataUpdateCoordinator,
+        entry: ConfigEntry,
+        key: str,
+    ) -> None:
+        """Initialize the sensor."""
+        super().__init__(coordinator, entry, key)
+        self._attr_name = "Portfolio Profit/Loss %"
+        self._attr_native_unit_of_measurement = "%"
+        self._attr_state_class = SensorStateClass.MEASUREMENT
+        self._attr_icon = "mdi:percent"
 
     @property
     def native_value(self) -> StateType:
@@ -172,10 +206,18 @@ class EasyEquitiesPortfolioProfitLossPercentSensor(EasyEquitiesSensor):
 class EasyEquitiesHoldingsCountSensor(EasyEquitiesSensor):
     """Sensor for number of holdings."""
 
-    _attr_name = "Portfolio Holdings Count"
-    _attr_native_unit_of_measurement = "holdings"
-    _attr_state_class = SensorStateClass.MEASUREMENT
-    _attr_icon = "mdi:chart-box"
+    def __init__(
+        self,
+        coordinator: EasyEquitiesDataUpdateCoordinator,
+        entry: ConfigEntry,
+        key: str,
+    ) -> None:
+        """Initialize the sensor."""
+        super().__init__(coordinator, entry, key)
+        self._attr_name = "Portfolio Holdings Count"
+        self._attr_native_unit_of_measurement = "holdings"
+        self._attr_state_class = SensorStateClass.MEASUREMENT
+        self._attr_icon = "mdi:chart-box"
 
     @property
     def native_value(self) -> StateType:
@@ -198,19 +240,31 @@ class EasyEquitiesHoldingSensor(EasyEquitiesSensor):
         holding: dict[str, Any],
     ) -> None:
         """Initialize the holding sensor."""
-        super().__init__(coordinator, entry)
-        self.holding = holding
+        contract_code = holding.get("contract_code", "unknown")
+        super().__init__(coordinator, entry, f"holding_{contract_code}")
+        self._contract_code = contract_code
         self._attr_name = f"Holding: {holding.get('name', 'Unknown')}"
-        self._attr_unique_id = f"{entry.entry_id}_holding_{holding.get('contract_code', 'unknown')}"
         self._attr_native_unit_of_measurement = "ZAR"
         self._attr_device_class = SensorDeviceClass.MONETARY
 
     @property
+    def _holding(self) -> dict[str, Any] | None:
+        """Get the current holding data from coordinator."""
+        if not self.coordinator.data or "holdings" not in self.coordinator.data:
+            return None
+        holdings = self.coordinator.data["holdings"]
+        return next(
+            (h for h in holdings if h.get("contract_code") == self._contract_code),
+            None,
+        )
+
+    @property
     def native_value(self) -> StateType:
         """Return the current value of the holding."""
-        if not self.holding:
+        holding = self._holding
+        if not holding:
             return None
-        value_str = self.holding.get("current_value", "0")
+        value_str = holding.get("current_value", "0")
         try:
             return float(value_str.replace("R", "").replace(",", "").replace(" ", ""))
         except (ValueError, AttributeError):
@@ -219,13 +273,14 @@ class EasyEquitiesHoldingSensor(EasyEquitiesSensor):
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return extra state attributes."""
-        if not self.holding:
+        holding = self._holding
+        if not holding:
             return {}
         return {
-            ATTR_CONTRACT_CODE: self.holding.get("contract_code"),
-            ATTR_ISIN: self.holding.get("isin"),
-            ATTR_CURRENT_PRICE: self.holding.get("current_price"),
-            ATTR_PURCHASE_VALUE: self.holding.get("purchase_value"),
-            ATTR_SHARES: self.holding.get("shares"),
-            ATTR_CURRENT_VALUE: self.holding.get("current_value"),
+            ATTR_CONTRACT_CODE: holding.get("contract_code"),
+            ATTR_ISIN: holding.get("isin"),
+            ATTR_CURRENT_PRICE: holding.get("current_price"),
+            ATTR_PURCHASE_VALUE: holding.get("purchase_value"),
+            ATTR_SHARES: holding.get("shares"),
+            ATTR_CURRENT_VALUE: holding.get("current_value"),
         }
