@@ -260,3 +260,43 @@ git push origin v1.1.0
 3. **GitHub Release is created automatically** by the workflow (this is what HACS reads!)
 
 **Without GitHub Releases, HACS will show commit hashes instead of versions!**
+
+## Lovelace Dashboard Maintenance - MANDATORY
+
+**The master dashboard example (`lovelace/dashboards/master.yaml`) MUST be kept updated and working on each version update.**
+
+**After making code changes that affect sensors or entity IDs, you MUST:**
+
+1. **Check if entity IDs changed**: Review sensor entity ID generation in `custom_components/easy_equities/sensor.py`
+2. **Update master.yaml if needed**:
+   - Verify entity ID patterns match actual sensor generation
+   - Update entity references to use correct patterns (e.g., `sensor.{entry_id}_portfolio_value`)
+   - Use `auto-entities` card for dynamic sensor discovery when possible
+   - Test that all entity references are valid
+3. **Update other dashboard examples** if entity patterns changed
+4. **Add comments** explaining entity ID patterns and how to find actual entity IDs
+
+**Entity ID Pattern:**
+- Portfolio sensors: `sensor.{entry_id}_portfolio_{type}`
+  - Example: `sensor.easy_equities_portfolio_value`
+- Holding sensors: `sensor.{entry_id}_holding_{contract_code}` (or `sensor.{entry_id}_holding_{account_id}_{contract_code}` for multiple accounts)
+  - Example: `sensor.easy_equities_holding_EQU_ZA_SYGJP`
+
+**When to update master.yaml:**
+- ✅ Entity ID generation logic changes
+- ✅ New sensor types added
+- ✅ Sensor attribute names change
+- ✅ Multiple accounts support changes entity structure
+- ✅ Breaking changes to sensor structure
+
+**When NOT to update master.yaml:**
+- ❌ Only documentation changes
+- ❌ Only internal code refactoring (no entity ID changes)
+- ❌ Only bug fixes that don't affect entity structure
+
+**Verification Checklist:**
+1. ✅ All entity IDs in master.yaml match actual sensor generation patterns
+2. ✅ Auto-entities filters use correct patterns
+3. ✅ Jinja2 templates reference correct entity IDs
+4. ✅ Comments explain how to find actual entity IDs
+5. ✅ Dashboard works with both single and multiple account configurations

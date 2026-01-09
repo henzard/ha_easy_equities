@@ -276,7 +276,7 @@ class EasyEquitiesHoldingSensor(EasyEquitiesSensor):
         holding = self._holding
         if not holding:
             return {}
-        return {
+        attrs = {
             ATTR_CONTRACT_CODE: holding.get("contract_code"),
             ATTR_ISIN: holding.get("isin"),
             ATTR_CURRENT_PRICE: holding.get("current_price"),
@@ -284,3 +284,8 @@ class EasyEquitiesHoldingSensor(EasyEquitiesSensor):
             ATTR_SHARES: holding.get("shares"),
             ATTR_CURRENT_VALUE: holding.get("current_value"),
         }
+        # Add account info if multiple accounts
+        if holding.get("_account_id"):
+            attrs["account_id"] = holding.get("_account_id")
+            attrs["account_name"] = holding.get("_account_name")
+        return attrs

@@ -2,6 +2,10 @@ title: Easy Equities Master Dashboard
 path: easy-equities
 icon: mdi:wallet
 panel: true
+# NOTE: This dashboard uses auto-entities for automatic sensor discovery
+# Entity IDs follow pattern: sensor.{entry_id}_{sensor_type}
+# Example: sensor.easy_equities_portfolio_value
+# Replace 'easy_equities' with your actual integration entry ID
 cards:
   - type: horizontal-stack
     cards:
@@ -15,33 +19,46 @@ cards:
               Real-time investment tracking
 
           # Portfolio Summary
+          # Note: Replace 'easy_equities' with your actual integration entry ID
+          # Entity IDs follow pattern: sensor.{entry_id}_portfolio_value
           - type: entities
             title: Portfolio Summary
             entities:
-              - entity: sensor.portfolio_value
-                name: Total Value
-                icon: mdi:wallet
-                tap_action:
-                  action: more-info
-              - entity: sensor.portfolio_purchase_value
-                name: Total Invested
-                icon: mdi:currency-usd
-                tap_action:
-                  action: more-info
-              - entity: sensor.portfolio_profit_loss
-                name: Profit/Loss
-                icon: mdi:trending-up
-                tap_action:
-                  action: more-info
-              - entity: sensor.portfolio_profit_loss_percent
-                name: Return %
-                icon: mdi:percent
-                tap_action:
-                  action: more-info
+              - type: custom:auto-entities
+                card:
+                  type: entities
+                  title: Portfolio Summary
+                filter:
+                  include:
+                    - entity_id: sensor.*_portfolio_value
+                      options:
+                        name: Total Value
+                        icon: mdi:wallet
+                        tap_action:
+                          action: more-info
+                    - entity_id: sensor.*_portfolio_purchase_value
+                      options:
+                        name: Total Invested
+                        icon: mdi:currency-usd
+                        tap_action:
+                          action: more-info
+                    - entity_id: sensor.*_portfolio_profit_loss
+                      options:
+                        name: Profit/Loss
+                        icon: mdi:trending-up
+                        tap_action:
+                          action: more-info
+                    - entity_id: sensor.*_portfolio_profit_loss_percent
+                      options:
+                        name: Return %
+                        icon: mdi:percent
+                        tap_action:
+                          action: more-info
 
           # Performance Gauge
+          # Note: Replace with your actual entity ID (sensor.{entry_id}_portfolio_profit_loss_percent)
           - type: gauge
-            entity: sensor.portfolio_profit_loss_percent
+            entity: sensor.easy_equities_portfolio_profit_loss_percent
             name: Return Percentage
             min: -50
             max: 100
@@ -54,11 +71,18 @@ cards:
           - type: entities
             title: Portfolio Stats
             entities:
-              - entity: sensor.portfolio_holdings_count
-                name: Number of Holdings
-                icon: mdi:chart-box
-                tap_action:
-                  action: more-info
+              - type: custom:auto-entities
+                card:
+                  type: entities
+                  title: Portfolio Stats
+                filter:
+                  include:
+                    - entity_id: sensor.*_portfolio_holdings_count
+                      options:
+                        name: Number of Holdings
+                        icon: mdi:chart-box
+                        tap_action:
+                          action: more-info
 
       # Holdings Details Section (middle column)
       - type: vertical-stack
@@ -74,6 +98,7 @@ cards:
             title: Current Holdings
             show_header_toggle: false
             # Auto-entities will automatically include all holding sensors
+            # Entity pattern: sensor.{entry_id}_holding_{contract_code} or sensor.{entry_id}_holding_{account_id}_{contract_code}
             entities:
               - type: custom:auto-entities
                 card:
@@ -81,7 +106,7 @@ cards:
                   title: Holdings
                 filter:
                   include:
-                    - entity_id: sensor.holding_*
+                    - entity_id: sensor.*_holding_*
                       options:
                         secondary_info: "{{ state_attr(config.entity, 'current_value') }}"
                         tap_action:
@@ -91,7 +116,7 @@ cards:
           - type: markdown
             content: |
               ### 💎 Top Holdings
-              {% set holdings = states.sensor | selectattr('entity_id', 'match', 'sensor.holding_.*') | list %}
+              {% set holdings = states.sensor | selectattr('entity_id', 'match', 'sensor.*_holding_.*') | list %}
               {% if holdings %}
               {% for holding in holdings | sort(attribute='state', reverse=true) | list[:5] %}
               - **{{ state_attr(holding.entity_id, 'name') | default(holding.name) }}**
@@ -116,34 +141,49 @@ cards:
           - type: entities
             title: Performance Metrics
             entities:
-              - entity: sensor.portfolio_profit_loss
-                name: Total Profit/Loss
-                icon: mdi:trending-up
-                tap_action:
-                  action: more-info
-              - entity: sensor.portfolio_profit_loss_percent
-                name: Return Percentage
-                icon: mdi:percent
-                tap_action:
-                  action: more-info
+              - type: custom:auto-entities
+                card:
+                  type: entities
+                  title: Performance Metrics
+                filter:
+                  include:
+                    - entity_id: sensor.*_portfolio_profit_loss
+                      options:
+                        name: Total Profit/Loss
+                        icon: mdi:trending-up
+                        tap_action:
+                          action: more-info
+                    - entity_id: sensor.*_portfolio_profit_loss_percent
+                      options:
+                        name: Return Percentage
+                        icon: mdi:percent
+                        tap_action:
+                          action: more-info
 
           # Portfolio Value Chart
+          # Note: Replace with your actual entity ID (sensor.{entry_id}_portfolio_value)
           - type: history-graph
             title: Portfolio Value Over Time
             entities:
-              - entity: sensor.portfolio_value
+              - entity: sensor.easy_equities_portfolio_value
                 name: Portfolio Value
             hours_to_show: 168
             refresh_interval: 300
 
           # Quick Stats
+          # Note: Uses auto-discovery to find portfolio sensors dynamically
           - type: markdown
             content: |
               ### 📈 Quick Stats
-              {% set portfolio_value = states('sensor.portfolio_value') | float(0) %}
-              {% set purchase_value = states('sensor.portfolio_purchase_value') | float(0) %}
-              {% set profit_loss = states('sensor.portfolio_profit_loss') | float(0) %}
-              {% set holdings_count = states('sensor.portfolio_holdings_count') | int(0) %}
+              {% set portfolio_sensors = states.sensor | selectattr('entity_id', 'match', 'sensor.*_portfolio_value') | list %}
+              {% set purchase_sensors = states.sensor | selectattr('entity_id', 'match', 'sensor.*_portfolio_purchase_value') | list %}
+              {% set profit_sensors = states.sensor | selectattr('entity_id', 'match', 'sensor.*_portfolio_profit_loss') | list %}
+              {% set holdings_sensors = states.sensor | selectattr('entity_id', 'match', 'sensor.*_portfolio_holdings_count') | list %}
+              
+              {% set portfolio_value = portfolio_sensors[0].state | float(0) if portfolio_sensors else 0 %}
+              {% set purchase_value = purchase_sensors[0].state | float(0) if purchase_sensors else 0 %}
+              {% set profit_loss = profit_sensors[0].state | float(0) if profit_sensors else 0 %}
+              {% set holdings_count = holdings_sensors[0].state | int(0) if holdings_sensors else 0 %}
               
               - **Average Holding Value:** {{ (portfolio_value / holdings_count) | round(2) if holdings_count > 0 else 0 }} ZAR
               - **Total Invested:** {{ purchase_value | round(2) }} ZAR
