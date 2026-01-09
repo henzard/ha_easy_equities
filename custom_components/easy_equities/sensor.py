@@ -1,6 +1,7 @@
 """Sensor platform for Easy Equities."""
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from homeassistant.components.sensor import (
@@ -30,6 +31,8 @@ from .const import (
 )
 from .coordinator import EasyEquitiesDataUpdateCoordinator
 from .util import parse_currency
+
+_LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(
@@ -104,7 +107,7 @@ class EasyEquitiesPortfolioValueSensor(EasyEquitiesSensor):
         """Initialize the sensor."""
         super().__init__(coordinator, entry, key)
         self._attr_name = "Portfolio Value"
-        self._attr_native_unit_of_measurement = "ZAR"
+        self._attr_native_unit_of_measurement = "ZAR"  # Default, will be updated from data
         self._attr_device_class = SensorDeviceClass.MONETARY
         self._attr_state_class = SensorStateClass.MEASUREMENT
         self._attr_icon = "mdi:wallet"
@@ -117,15 +120,41 @@ class EasyEquitiesPortfolioValueSensor(EasyEquitiesSensor):
         return self.coordinator.data["summary"].get("total_current_value")
 
     @property
+    def native_unit_of_measurement(self) -> str | None:
+        """Return the unit of measurement."""
+        if not self.coordinator.data:
+            return self._attr_native_unit_of_measurement
+        # Get currency from primary account or first account
+        account = self.coordinator.data.get("account", {})
+        if account and account.get("currency"):
+            return account.get("currency")
+        # Fallback: check accounts list
+        accounts = self.coordinator.data.get("accounts", [])
+        if accounts and accounts[0].get("account", {}).get("currency"):
+            return accounts[0]["account"]["currency"]
+        return self._attr_native_unit_of_measurement
+
+    @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return extra state attributes."""
         if not self.coordinator.data:
             return {}
         data = self.coordinator.data
         account = data.get("account", {})
+        accounts = data.get("accounts", [])
+        
+        # Collect all currencies from accounts
+        currencies = set()
+        if account and account.get("currency"):
+            currencies.add(account.get("currency"))
+        for acc_data in accounts:
+            acc_currency = acc_data.get("account", {}).get("currency")
+            if acc_currency:
+                currencies.add(acc_currency)
+        
         return {
             ATTR_ACCOUNT_NAME: account.get("name"),
-            ATTR_CURRENCY: "ZAR",
+            ATTR_CURRENCY: ", ".join(sorted(currencies)) if currencies else "ZAR",
         }
 
 
@@ -141,10 +170,25 @@ class EasyEquitiesPortfolioPurchaseValueSensor(EasyEquitiesSensor):
         """Initialize the sensor."""
         super().__init__(coordinator, entry, key)
         self._attr_name = "Portfolio Purchase Value"
-        self._attr_native_unit_of_measurement = "ZAR"
+        self._attr_native_unit_of_measurement = "ZAR"  # Default, will be updated from data
         self._attr_device_class = SensorDeviceClass.MONETARY
         self._attr_state_class = SensorStateClass.MEASUREMENT
         self._attr_icon = "mdi:currency-usd"
+
+    @property
+    def native_unit_of_measurement(self) -> str | None:
+        """Return the unit of measurement."""
+        if not self.coordinator.data:
+            return self._attr_native_unit_of_measurement
+        # Get currency from primary account or first account
+        account = self.coordinator.data.get("account", {})
+        if account and account.get("currency"):
+            return account.get("currency")
+        # Fallback: check accounts list
+        accounts = self.coordinator.data.get("accounts", [])
+        if accounts and accounts[0].get("account", {}).get("currency"):
+            return accounts[0]["account"]["currency"]
+        return self._attr_native_unit_of_measurement
 
     @property
     def native_value(self) -> StateType:
@@ -166,10 +210,25 @@ class EasyEquitiesPortfolioProfitLossSensor(EasyEquitiesSensor):
         """Initialize the sensor."""
         super().__init__(coordinator, entry, key)
         self._attr_name = "Portfolio Profit/Loss"
-        self._attr_native_unit_of_measurement = "ZAR"
+        self._attr_native_unit_of_measurement = "ZAR"  # Default, will be updated from data
         self._attr_device_class = SensorDeviceClass.MONETARY
         self._attr_state_class = SensorStateClass.MEASUREMENT
         self._attr_icon = "mdi:trending-up"
+
+    @property
+    def native_unit_of_measurement(self) -> str | None:
+        """Return the unit of measurement."""
+        if not self.coordinator.data:
+            return self._attr_native_unit_of_measurement
+        # Get currency from primary account or first account
+        account = self.coordinator.data.get("account", {})
+        if account and account.get("currency"):
+            return account.get("currency")
+        # Fallback: check accounts list
+        accounts = self.coordinator.data.get("accounts", [])
+        if accounts and accounts[0].get("account", {}).get("currency"):
+            return accounts[0]["account"]["currency"]
+        return self._attr_native_unit_of_measurement
 
     @property
     def native_value(self) -> StateType:
@@ -257,7 +316,7 @@ class EasyEquitiesHoldingSensor(EasyEquitiesSensor):
         super().__init__(coordinator, entry, f"holding_{contract_code}")
         self._contract_code = contract_code
         self._attr_name = f"Holding: {holding.get('name', 'Unknown')}"
-        self._attr_native_unit_of_measurement = "ZAR"
+        self._attr_native_unit_of_measurement = holding.get("_account_currency", "ZAR")
         self._attr_device_class = SensorDeviceClass.MONETARY
 
     @property
@@ -272,6 +331,14 @@ class EasyEquitiesHoldingSensor(EasyEquitiesSensor):
         )
 
     @property
+    def native_unit_of_measurement(self) -> str | None:
+        """Return the unit of measurement from holding data."""
+        holding = self._holding
+        if holding and holding.get("_account_currency"):
+            return holding.get("_account_currency")
+        return self._attr_native_unit_of_measurement
+
+    @property
     def native_value(self) -> StateType:
         """Return the current value of the holding."""
         holding = self._holding
@@ -281,8 +348,6 @@ class EasyEquitiesHoldingSensor(EasyEquitiesSensor):
         try:
             return parse_currency(value_str)
         except (ValueError, AttributeError) as err:
-            import logging
-            _LOGGER = logging.getLogger(__name__)
             _LOGGER.warning(
                 "Failed to parse current_value for holding %s: %s (value: %s)",
                 self._contract_code,
@@ -309,4 +374,7 @@ class EasyEquitiesHoldingSensor(EasyEquitiesSensor):
         if holding.get("_account_id"):
             attrs["account_id"] = holding.get("_account_id")
             attrs["account_name"] = holding.get("_account_name")
+        # Add currency
+        if holding.get("_account_currency"):
+            attrs[ATTR_CURRENCY] = holding.get("_account_currency")
         return attrs

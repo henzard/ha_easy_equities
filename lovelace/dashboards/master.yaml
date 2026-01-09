@@ -120,9 +120,12 @@ cards:
               {% if holdings %}
               {% for holding in holdings | sort(attribute='state', reverse=true) | list[:5] %}
               - **{{ state_attr(holding.entity_id, 'name') | default(holding.name) }}**
-                - Value: {{ holding.state | round(2) }} ZAR
+                - Value: {{ holding.state | round(2) }} {{ state_attr(holding.entity_id, 'currency') | default(holding.attributes.unit_of_measurement) | default('ZAR') }}
                 - Shares: {{ state_attr(holding.entity_id, 'shares') | default('N/A') }}
                 - Price: {{ state_attr(holding.entity_id, 'current_price') | default('N/A') }}
+                {% if state_attr(holding.entity_id, 'account_name') %}
+                - Account: {{ state_attr(holding.entity_id, 'account_name') }}
+                {% endif %}
               {% endfor %}
               {% else %}
               No holdings data available

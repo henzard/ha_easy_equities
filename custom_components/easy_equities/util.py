@@ -37,8 +37,9 @@ def parse_currency(value: str | Any) -> float:
             _LOGGER.warning("Could not convert value to string: %s", value)
             return 0.0
     
-    # Remove currency symbols ($, R, €, £, etc.) and whitespace
-    # Remove commas, spaces, and common currency symbols
+    # Remove currency symbols ($, R, €, £, etc.)
+    # Remove commas and spaces (spaces are used as thousand separators in some formats like "R3 974.98")
+    # Keep the decimal point
     cleaned = re.sub(r'[R$€£¥,\s]', '', value)
     
     # Handle empty string

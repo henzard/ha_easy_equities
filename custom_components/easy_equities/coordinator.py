@@ -158,6 +158,13 @@ class EasyEquitiesDataUpdateCoordinator(DataUpdateCoordinator):
                     self.client.accounts.valuations, account.id
                 )
                 _LOGGER.debug("Account %s: Found %d valuation(s)", account.name, len(valuations))
+                
+                # Extract currency from valuations
+                account_currency = "ZAR"  # Default fallback
+                if valuations and isinstance(valuations, dict):
+                    top_summary = valuations.get("TopSummary", {})
+                    account_currency = top_summary.get("AccountCurrency", account_currency)
+                    _LOGGER.debug("Account %s currency: %s", account.name, account_currency)
 
                 # Fetch transactions (last 30 days)
                 _LOGGER.debug("Fetching transactions for account: %s", account.id)
@@ -209,10 +216,11 @@ class EasyEquitiesDataUpdateCoordinator(DataUpdateCoordinator):
                     account_current_value - account_purchase_value
                 )
 
-                # Add account identifier to holdings
+                # Add account identifier and currency to holdings
                 for holding in holdings:
                     holding["_account_id"] = account.id
                     holding["_account_name"] = account.name
+                    holding["_account_currency"] = account_currency
 
                 all_holdings.extend(holdings)
                 total_purchase_value += account_purchase_value
@@ -223,6 +231,7 @@ class EasyEquitiesDataUpdateCoordinator(DataUpdateCoordinator):
                         "id": account.id,
                         "name": account.name,
                         "trading_currency_id": account.trading_currency_id,
+                        "currency": account_currency,
                     },
                     "holdings": holdings,
                     "valuations": valuations,
@@ -237,6 +246,7 @@ class EasyEquitiesDataUpdateCoordinator(DataUpdateCoordinator):
                             else 0
                         ),
                         "holdings_count": len(holdings),
+                        "currency": account_currency,
                     },
                 })
 

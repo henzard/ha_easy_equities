@@ -71,9 +71,24 @@ Some examples use the `auto-entities` card to automatically include all holding 
 - Easy Equities integration installed and configured
 - (Optional) Auto Entities card from HACS for automatic sensor inclusion
 
+## TradingView Integration
+
+For enhanced market data visualization, see `README_TRADINGVIEW.md` for examples using the TradingView Widget Card.
+
+**TradingView Widget Card Examples:**
+- `tradingview_enhanced.yaml` - Complete dashboard with TradingView widgets
+- `cards/tradingview_portfolio_ticker.yaml` - Ticker tape for holdings
+- `cards/tradingview_holdings_tickers.yaml` - Live price tickers
+- `cards/tradingview_top_holding_analysis.yaml` - Technical analysis chart
+
+**Requirements:**
+- Install [TradingView Widget Card](https://github.com/cataseven/Tradingview-Widget-Card) via HACS
+- Map your holdings' contract codes to TradingView symbols
+
 ## Notes
 
-- All cards use standard Home Assistant cards (no HACS dependencies required, except for auto-entities)
+- All cards use standard Home Assistant cards (no HACS dependencies required, except for auto-entities and TradingView widgets)
 - Entity IDs may vary based on your Home Assistant configuration
 - Adjust the entity IDs in the YAML files to match your actual sensor names
 - The `master.yaml` dashboard uses Jinja2 templates for dynamic content
+- TradingView widgets require manual symbol mapping from your holdings' contract codes
