@@ -1,0 +1,207 @@
+title: Easy Equities - TradingView Enhanced Dashboard
+path: easy-equities-tradingview
+icon: mdi:chart-line
+panel: true
+# NOTE: This dashboard requires the TradingView Widget Card
+# Install via HACS: https://github.com/cataseven/Tradingview-Widget-Card
+cards:
+  # Header
+  - type: markdown
+    content: |
+      ## 📊 Easy Equities Portfolio with TradingView Widgets
+      Real-time market data and technical analysis for your investments
+      
+      **Requirements:**
+      - TradingView Widget Card installed via HACS
+      - Map your holdings' contract codes to TradingView symbols
+
+  # Portfolio Summary Row
+  - type: horizontal-stack
+    cards:
+      - type: entities
+        title: Portfolio Summary
+        entities:
+          - type: custom:auto-entities
+            card:
+              type: entities
+              title: Portfolio Summary
+            filter:
+              include:
+                - entity_id: sensor.*_portfolio_value
+                  options:
+                    name: Total Value
+                    icon: mdi:wallet
+                - entity_id: sensor.*_portfolio_profit_loss
+                  options:
+                    name: Profit/Loss
+                    icon: mdi:trending-up
+                - entity_id: sensor.*_portfolio_profit_loss_percent
+                  options:
+                    name: Return %
+                    icon: mdi:percent
+
+  # TradingView Ticker Tape
+  - type: markdown
+    content: |
+      ### 📈 Live Market Ticker
+      Scrolling ticker showing your portfolio holdings
+  - type: custom:tradingview-widget-card
+    widget_type: ticker-tape
+    title: Portfolio Holdings Ticker
+    # IMPORTANT: Map your holdings to TradingView symbols
+    # Check your holdings' contract_code and ISIN to find the correct TradingView symbol
+    # Format: EXCHANGE:SYMBOL
+    # Examples:
+    # - JSE:ABG (Johannesburg Stock Exchange)
+    # - NASDAQ:AAPL (US stocks)
+    # - NYSE:TSLA (US stocks)
+    pairs:
+      # Add your holdings here - replace with actual TradingView symbols
+      - JSE:ABG
+      - JSE:AGL
+      # Add more holdings...
+    show_symbol_logo: true
+    display_mode: regular
+    is_transparent: false
+    height: 50px
+    width: 100%
+    color_theme: dark
+    locale: en
+
+  # Holdings List with TradingView Integration
+  - type: horizontal-stack
+    cards:
+      # Holdings List
+      - type: vertical-stack
+        cards:
+          - type: markdown
+            content: |
+              ### 💼 Your Holdings
+          - type: entities
+            title: Current Holdings
+            entities:
+              - type: custom:auto-entities
+                card:
+                  type: entities
+                  title: Holdings
+                filter:
+                  include:
+                    - entity_id: sensor.*_holding_*
+                      options:
+                        secondary_info: "{{ state_attr(config.entity, 'current_value') }}"
+                        tap_action:
+                          action: more-info
+
+      # TradingView Tickers for Holdings
+      - type: vertical-stack
+        cards:
+          - type: markdown
+            content: |
+              ### 📊 Live Prices
+              Real-time prices from TradingView
+          - type: custom:tradingview-widget-card
+            widget_type: tickers
+            title: Portfolio Holdings
+            # Map your holdings to TradingView symbols
+            pairs:
+              # Replace with your actual holdings' TradingView symbols
+              - JSE:ABG
+              - JSE:AGL
+              # Add more...
+            show_symbol_logo: true
+            height: 400px
+            width: 100%
+            color_theme: dark
+            locale: en
+            is_transparent: false
+
+  # Technical Analysis Section
+  - type: markdown
+    content: |
+      ### 📈 Technical Analysis
+      Charts and indicators for your top holdings
+  - type: horizontal-stack
+    cards:
+      # Top Holding Technical Analysis
+      - type: custom:tradingview-widget-card
+        widget_type: technical-analysis
+        title: Top Holding Analysis
+        pairs:
+          # Replace with your top holding's TradingView symbol
+          - JSE:ABG
+        interval: 1D
+        height: 500px
+        width: 100%
+        show_interval_tabs: true
+        is_transparent: false
+        display_mode: single
+        locale: en
+        color_theme: dark
+
+      # Second Holding Technical Analysis
+      - type: custom:tradingview-widget-card
+        widget_type: technical-analysis
+        title: Second Holding Analysis
+        pairs:
+          # Replace with your second holding's TradingView symbol
+          - JSE:AGL
+        interval: 1D
+        height: 500px
+        width: 100%
+        show_interval_tabs: true
+        is_transparent: false
+        display_mode: single
+        locale: en
+        color_theme: dark
+
+  # Market Overview
+  - type: markdown
+    content: |
+      ### 🌍 Market Overview
+      Comprehensive market view of your portfolio sectors
+  - type: custom:tradingview-widget-card
+    widget_type: market-overview
+    title: Portfolio Market Overview
+    height: 600px
+    width: 100%
+    color_theme: dark
+    locale: en
+    date_range: 12M
+    show_chart: true
+    show_floating_tooltip: true
+    is_transparent: false
+    # Configure tabs based on your portfolio holdings
+    tab_config: |-
+      Stocks:
+       - JSE:ABG
+       - JSE:AGL
+      # Add more tabs as needed
+      # Crypto:
+      #  - BINANCE:BTCUSDT
+      # US Stocks:
+      #  - NASDAQ:AAPL
+
+  # Stock Heatmap (if applicable)
+  - type: markdown
+    content: |
+      ### 🔥 Stock Heatmap
+      Visual representation of market performance
+  - type: custom:tradingview-widget-card
+    widget_type: stock-heatmap
+    title: Portfolio Sector Heatmap
+    # Adjust data_source based on your holdings
+    # Options: SPX500, NASDAQ, DowJones, or specific exchange
+    data_source: SPX500
+    height: 500px
+    width: 100%
+    exchange: ""
+    grouping: sector
+    block_size: market_cap_basic
+    block_color: change
+    has_top_bar: false
+    is_zoom_enabled: true
+    has_symbol_tooltip: true
+    is_data_set_enabled: false
+    is_mono_size: true
+    color_theme: dark
+    locale: en

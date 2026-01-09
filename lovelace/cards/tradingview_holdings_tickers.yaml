@@ -1,0 +1,21 @@
+# TradingView Tickers Card for Portfolio Holdings
+# Requires: TradingView Widget Card (install via HACS)
+# Displays vertical list of your portfolio holdings with live prices
+
+type: custom:tradingview-widget-card
+widget_type: tickers
+title: Portfolio Holdings - Live Prices
+# Map your holdings to TradingView symbols
+# Format: EXCHANGE:SYMBOL (e.g., JSE:ABG, NASDAQ:AAPL)
+pairs:
+  # Add your holdings here
+  # Example:
+  # - JSE:ABG
+  # - NASDAQ:AAPL
+  # - NYSE:TSLA
+show_symbol_logo: true
+height: 400px
+width: 100%
+color_theme: dark
+locale: en
+is_transparent: false

@@ -1,0 +1,24 @@
+# TradingView Ticker Tape for Portfolio Holdings
+# Requires: TradingView Widget Card (install via HACS)
+# This card displays a scrolling ticker of your portfolio holdings
+
+type: custom:tradingview-widget-card
+widget_type: ticker-tape
+title: Portfolio Holdings
+# Note: You'll need to map your holdings to TradingView symbols
+# Example mappings (adjust based on your actual holdings):
+# - JSE:ABG for Absa Group
+# - JSE:AGL for Anglo American
+# - JSE:ANH for Anheuser-Busch InBev
+# Check your holdings' contract_code and map to TradingView format
+pairs:
+  # Add your holdings here - map contract_code to TradingView symbol format
+  # Example: - JSE:ABG
+  # You can get symbols from your holdings' contract_code attribute
+show_symbol_logo: true
+display_mode: regular
+is_transparent: false
+height: 50px
+width: 100%
+color_theme: dark
+locale: en

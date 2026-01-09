@@ -1,0 +1,21 @@
+# TradingView Technical Analysis for Top Holding
+# Requires: TradingView Widget Card (install via HACS)
+# Shows technical analysis chart for your largest holding
+
+type: custom:tradingview-widget-card
+widget_type: technical-analysis
+title: Top Holding - Technical Analysis
+# This will show analysis for your largest holding
+# You'll need to manually set the symbol or use a template
+pairs:
+  # Replace with your top holding's TradingView symbol
+  # Example: - JSE:ABG
+  - JSE:ABG  # Replace with actual symbol
+interval: 1D
+height: 500px
+width: 100%
+show_interval_tabs: true
+is_transparent: false
+display_mode: single
+locale: en
+color_theme: dark
